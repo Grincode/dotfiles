@@ -15,7 +15,6 @@ background-blur-radius = 12
 
 # Cursor
 cursor-style = block
-cursor-blink = true
 
 # Colores base (override fino del tema)
 background = 06080f
