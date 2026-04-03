@@ -3,35 +3,42 @@ set -e
 
 echo "🚀 Instalando dotfiles..."
 
+DOTFILES_DIR="$HOME/dotfiles"
+
 # Crear carpetas necesarias
-mkdir -p ~/.config/tmux
-mkdir -p ~/.config/ghostty
-mkdir -p ~/.config/fish
-mkdir -p ~/.config
+mkdir -p "$HOME/.config"
+mkdir -p "$HOME/.config/tmux"
+mkdir -p "$HOME/.config/ghostty"
+mkdir -p "$HOME/.config/fish"
+mkdir -p "$HOME/.config/alacritty"
+mkdir -p "$HOME/.config/lazygit"
 
 # tmux
-ln -sf ~/dotfiles/tmux/tmux.conf ~/.config/tmux/tmux.conf
-ln -sf ~/.config/tmux/tmux.conf ~/.tmux.conf
+ln -sf "$DOTFILES_DIR/tmux/tmux.conf" "$HOME/.config/tmux/tmux.conf"
+ln -sf "$HOME/.config/tmux/tmux.conf" "$HOME/.tmux.conf"
 
 # ghostty
-ln -sf ~/dotfiles/ghostty/config ~/.config/ghostty/config
+ln -sf "$DOTFILES_DIR/ghostty/config" "$HOME/.config/ghostty/config"
 
 # fish
-ln -sf ~/dotfiles/fish/config.fish ~/.config/fish/config.fish
+ln -sf "$DOTFILES_DIR/fish/config.fish" "$HOME/.config/fish/config.fish"
 
-# nvim
-ln -sf ~/dotfiles/nvim ~/.config/nvim
+# nvim (carpeta completa)
+rm -rf "$HOME/.config/nvim"
+ln -sf "$DOTFILES_DIR/nvim" "$HOME/.config/nvim"
 
 # starship
-ln -sf ~/dotfiles/starship/starship.toml ~/.config/starship.toml
+ln -sf "$DOTFILES_DIR/starship/starship.toml" "$HOME/.config/starship.toml"
 
 # alacritty
-ln -sf ~/dotfiles/alacritty/alacritty.toml ~/.config/alacritty/alacritty.toml
+ln -sf "$DOTFILES_DIR/alacritty/alacritty.toml" "$HOME/.config/alacritty/alacritty.toml"
 
-# lazygit
-ln -sf ~/dotfiles/lazygit ~/.config/lazygit
+# lazygit (archivo correcto)
+ln -sf "$DOTFILES_DIR/lazygit/config.yml" "$HOME/.config/lazygit/config.yml"
 
-# git
-ln -sf ~/dotfiles/git/.gitconfig ~/.gitconfig
+# git (solo si existe)
+if [ -f "$DOTFILES_DIR/git/.gitconfig" ]; then
+  ln -sf "$DOTFILES_DIR/git/.gitconfig" "$HOME/.gitconfig"
+fi
 
-echo "✅ Dotfiles instalados"
+echo "✅ Dotfiles instalados correctamente"
