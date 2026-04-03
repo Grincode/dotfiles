@@ -1,0 +1,35 @@
+[window]
+padding = { x = 0, y = 0 }
+opacity = 0.85
+blur = true
+option_as_alt = "Both"
+decorations = "none"
+
+[font]
+size = 16
+
+[font.normal]
+family = "IosevkaTerm NF"
+
+[colors.primary]
+background = "#06080f"
+foreground = "#f3f6f9"
+
+[colors.normal]
+black   = "#45475a"
+red     = "#f38ba8"
+green   = "#a6e3a1"
+yellow  = "#f9e2af"
+blue    = "#89b4fa"
+magenta = "#f5c2e7"
+cyan    = "#94e2d5"
+white   = "#bac2de"
+
+[cursor]
+style = { shape = "Block", blinking = "On" }
+
+[mouse]
+hide_when_typing = true
+
+[env]
+TERM = "xterm-256color"
