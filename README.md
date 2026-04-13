@@ -1,18 +1,24 @@
 # Dotfiles
 
+<p align="center">
+  <img src="./docs/images/setup.png" alt="Login" width="500"/>
+  <br/>
+  <em>Pantalla de inicio</em>
+</p>
+
 Configuración personal para un workflowDev optimal.
 
 ## Estructura
 
-| Directorio | Descripción |
-|--------------|-------------|
-| `nvim/` | Neovim (LazyVim-based) |
-| `fish/` | Fish shell config |
-| `tmux/` | Tmux con plugins |
-| `starship/` | Starship prompt |
-| `lazygit/` | LazyGit config |
-| `alacritty/` | Alacritty terminal |
-| `ghostty/` | Ghostty terminal |
+| Directorio   | Descripción            |
+| ------------ | ---------------------- |
+| `nvim/`      | Neovim (LazyVim-based) |
+| `fish/`      | Fish shell config      |
+| `tmux/`      | Tmux con plugins       |
+| `starship/`  | Starship prompt        |
+| `lazygit/`   | LazyGit config         |
+| `alacritty/` | Alacritty terminal     |
+| `ghostty/`   | Ghostty terminal       |
 
 ## Requisitos Previos
 
@@ -36,3 +42,4 @@ El script symlinkea cada directorio a `~/.config/`.
 1. **Tmux**: Instalar TPM plugins (prefix + I)
 2. **Fisher**: Plugins de fish se instalan automáticamente en primera sesión
 3. **LazyVim**: Plugins se instalan automáticamente al abrir nvim
+
