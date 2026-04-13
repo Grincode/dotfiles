@@ -1,9 +1,9 @@
 # Dotfiles
 
 <p align="center">
-  <img src="./docs/images/setup.png" alt="Login" width="500"/>
+  <img src=".docs//images/setup.png" alt="nvim" width="500"/>
   <br/>
-  <em>Pantalla de inicio</em>
+  <em>nvim</em>
 </p>
 
 Configuración personal para un workflowDev optimal.
@@ -42,4 +42,3 @@ El script symlinkea cada directorio a `~/.config/`.
 1. **Tmux**: Instalar TPM plugins (prefix + I)
 2. **Fisher**: Plugins de fish se instalan automáticamente en primera sesión
 3. **LazyVim**: Plugins se instalan automáticamente al abrir nvim
-
