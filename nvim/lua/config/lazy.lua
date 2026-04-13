@@ -5,7 +5,7 @@ vim.g.node_host_prog = vim.fn.exepath("node") or "/usr/local/bin/node"
 
 -- Spell-checking
 vim.opt.spell = true -- activa spell checker
-vim.opt.spelllang = { "en" }
+vim.opt.spelllang = { "en", "es" }
 
 -- Define the path to the lazy.nvim plugin
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"

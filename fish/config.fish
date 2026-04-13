@@ -118,6 +118,3 @@ if status is-interactive
     clear
 
 end
-
-# opencode — PATH adicional (va fuera para que funcione en scripts)
-fish_add_path /home/gringodev/.opencode/bin
