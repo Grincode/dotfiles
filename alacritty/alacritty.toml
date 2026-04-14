@@ -1,9 +1,6 @@
-[window]
-padding = { x = 0, y = 0 }
-opacity = 0.97
-blur = true
-option_as_alt = "Both"
-decorations = "none"
+# ┌──────────────────────────────────────────────────────────────────────────────┐
+# │                                   FONT                                       │
+# └──────────────────────────────────────────────────────────────────────────────┘
 
 [font]
 size = 14
@@ -11,10 +8,62 @@ size = 14
 [font.normal]
 family = "IosevkaTerm NF"
 
+
+# ┌──────────────────────────────────────────────────────────────────────────────┐
+# │                                  WINDOW                                      │
+# └──────────────────────────────────────────────────────────────────────────────┘
+
+[window]
+opacity = 0.95
+blur = true
+option_as_alt = "Both"
+decorations = "none"
+
+
+# ┌──────────────────────────────────────────────────────────────────────────────┐
+# │                                  CURSOR                                      │
+# └──────────────────────────────────────────────────────────────────────────────┘
+
+[cursor]
+style = "Block"
+blink_interval = 500
+unfocused_hollow = true
+vi_mode_style = "Block"
+
+
+# ┌──────────────────────────────────────────────────────────────────────────────┐
+# │                                 TERMINAL                                     │
+# └──────────────────────────────────────────────────────────────────────────────┘
+
+[terminal]
+# For best Neovim compatibility, install alacritty terminfo:
+# sudo tic -xe alacritty,alacritty-direct extra/alacritty.info
+
+[env]
+TERM = "xterm-256color"
+
+[hints]
+enabled = []
+
+
+# ┌──────────────────────────────────────────────────────────────────────────────┐
+# │                           GENTLEMAN THEME                                    │
+# └──────────────────────────────────────────────────────────────────────────────┘
+
+# --- Base Colors ---
 [colors.primary]
-background = "#1e1e2e"
+background = "#06080f"
 foreground = "#f3f6f9"
 
+[colors.cursor]
+cursor = "#e0c15a"
+text = "#06080f"
+
+[colors.selection]
+background = "#1e1e2e"
+text = "#f3f6f9"
+
+# --- Normal Colors ---
 [colors.normal]
 black   = "#45475a"
 red     = "#f38ba8"
@@ -25,11 +74,13 @@ magenta = "#f5c2e7"
 cyan    = "#94e2d5"
 white   = "#bac2de"
 
-[cursor]
-style = { shape = "Block", blinking = "On" }
-
-[mouse]
-hide_when_typing = true
-
-[env]
-TERM = "xterm-256color"
+# --- Bright Colors ---
+[colors.bright]
+black   = "#8a8fa3"
+red     = "#de8fa8"
+green   = "#d1e8a9"
+yellow  = "#fff7b1"
+blue    = "#a3d4d5"
+magenta = "#ffaeea"
+cyan    = "#7fb4ca"
+white   = "#f3f6f9"
