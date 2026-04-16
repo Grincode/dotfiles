@@ -7,11 +7,11 @@ theme = catppuccin-mocha
 
 # Tipografía (ideal para dev + Nerd Fonts)
 font-family = "IosevkaTerm NF"
-font-size = 16
+font-size = 14
 
 # Transparencia + blur (balance entre estética y performance)
 background-opacity = 0.97
-background-blur-radius = 12
+background-blur-radius = 20
 
 # Cursor
 cursor-style = block
