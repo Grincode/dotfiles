@@ -47,12 +47,12 @@ enabled = []
 
 
 # ┌──────────────────────────────────────────────────────────────────────────────┐
-# │                           GENTLEMAN THEME                                    │
+# │                           GRINGODEV THEME                                    │
 # └──────────────────────────────────────────────────────────────────────────────┘
 
 # --- Base Colors ---
 [colors.primary]
-background = "#06080f"
+background = "#1e1e2e"
 foreground = "#f3f6f9"
 
 [colors.cursor]

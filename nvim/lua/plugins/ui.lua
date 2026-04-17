@@ -215,6 +215,7 @@ return {
       notifier = {},
       image = {},
       picker = {
+        git = { enabled = false },
         exclude = {
           ".git",
           "node_modules",
