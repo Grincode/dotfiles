@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+set -o pipefail
 
 VERSION="2.0.0"
 
@@ -103,18 +104,21 @@ check_command() {
 
 get_version() {
     local cmd="$1"
-    local version_flag="${2:---version}"
+    local version=""
+    set +e
     
     case "$cmd" in
-        tmux) tmux -V 2>/dev/null | awk '{print $2}' ;;
-        ghostty) ghostty +version 2>/dev/null | awk '{print $2}' ;;
-        fish) fish --version 2>/dev/null | awk '{print $3}' ;;
-        nvim) nvim --version 2>/dev/null | head -1 | awk '{print $2}' ;;
-        starship) starship --version 2>/dev/null | head -1 | awk '{print $2}' ;;
-        alacritty) alacritty --version 2>/dev/null | head -1 | awk '{print $2}' ;;
-        lazygit) lazygit --version 2>/dev/null | awk '{print $3}' ;;
-        *) ;;
+        tmux) version=$(tmux -V 2>/dev/null | awk '{print $2}') ;;
+        ghostty) version=$(ghostty +version 2>/dev/null | awk '{print $2}') ;;
+        fish) version=$(fish --version 2>/dev/null | awk '{print $3}') ;;
+        nvim) version=$(nvim --version 2>/dev/null | head -1 | awk '{print $2}') ;;
+        starship) version=$(starship --version 2>/dev/null | head -1 | awk '{print $2}') ;;
+        alacritty) version=$(alacritty --version 2>/dev/null | head -1 | awk '{print $2}') ;;
+        lazygit) version=$(lazygit --version 2>/dev/null | awk '{print $3}') ;;
     esac
+    
+    set -e
+    echo "$version"
 }
 
 check_brew() {
@@ -270,17 +274,22 @@ declare -A APP_STATUS
 scan_system() {
     log_step "Escaneando sistema..."
     
-    for app in "${!APPS[@]}"; do
-        if check_app "$app"; then
-            local ver
-            ver=$(get_version "$app")
-            APP_STATUS[$app]="installed:${ver}"
-            log_verbose "$app: $ver"
+    set +e
+    
+    local -a APP_LIST=(tmux ghostty fish nvim starship alacritty lazygit)
+    
+    for app in "${APP_LIST[@]}"; do
+        local status="missing"
+        if command -v "$app" >/dev/null 2>&1; then
+            status="installed"
+            log_verbose "$app: instalado"
         else
-            APP_STATUS[$app]="missing"
             log_verbose "$app: no instalado"
         fi
+        APP_STATUS[$app]="$status"
     done
+    
+    set -e
     
     if check_brew; then
         APP_STATUS["brew"]="installed"
@@ -292,7 +301,8 @@ scan_system() {
 print_status() {
     local width=60
     local apps_installed=0
-    local apps_total=${#APPS[@]}
+    local -a APP_LIST=(tmux ghostty fish nvim starship alacritty lazygit)
+    local apps_total=${#APP_LIST[@]}
     
     echo
     echo -en "${CYAN}${BOX_TOP_LEFT}${BOX_HORIZONTAL}$(printf '%0.s' $BOX_HORIZONTAL | head -c $((width - 2)))${BOX_TOP_RIGHT}${RESET}"
@@ -302,18 +312,16 @@ print_status() {
     echo -en "${CYAN}${BOX_VERTICAL}${RESET}"
     echo
     
-    for app in "${!APPS[@]}"; do
+    for app in "${APP_LIST[@]}"; do
         local status="${APP_STATUS[$app]:-missing}"
         local symbol="[✗]"
         local color="$RED"
         
-        case "$status" in
-            installed:*) 
-                symbol="[✓]"
-                color="$GREEN"
-                apps_installed=$((apps_installed + 1))
-                ;;
-        esac
+        if [ "$status" = "installed" ]; then
+            symbol="[✓]"
+            color="$GREEN"
+            apps_installed=$((apps_installed + 1))
+        fi
         
         echo -en "${CYAN}${BOX_VERTICAL}${RESET}  ${color}${symbol}${RESET} $app"
         printf "%-$((width - 10))s" ""
@@ -459,7 +467,9 @@ main() {
 install_missing_apps() {
     log_step "Instalando apps faltantes..."
     
-    for app in "${!APPS[@]}"; do
+    local -a APP_LIST=(tmux ghostty fish nvim starship alacritty lazygit)
+    
+    for app in "${APP_LIST[@]}"; do
         local status="${APP_STATUS[$app]:-missing}"
         
         if [ "$status" = "missing" ]; then
@@ -473,7 +483,8 @@ install_missing_apps() {
                 fi
             fi
             
-            install_app "$app" "${APPS[$app]}"
+            local install_cmd="${APPS[$app]}"
+            install_app "$app" "$install_cmd"
             
             if check_app "$app"; then
                 local ver
