@@ -15,16 +15,12 @@ BLUE="\033[34m"
 MAGENTA="\033[35m"
 CYAN="\033[36m"
 
-BOX_TOP_LEFT="╔"
-BOX_TOP_RIGHT="╗"
-BOX_BOTTOM_LEFT="╚"
-BOX_BOTTOM_RIGHT="╝"
-BOX_HORIZONTAL="═"
-BOX_VERTICAL="║"
-BOX_T_DOWN="╦"
-BOX_T_UP="╩"
-BOX_T_RIGHT="╠"
-BOX_T_LEFT="╣"
+BOX_TOP_LEFT="+"
+BOX_TOP_RIGHT="+"
+BOX_BOTTOM_LEFT="+"
+BOX_BOTTOM_RIGHT="+"
+BOX_HORIZONTAL="-"
+BOX_VERTICAL="|"
 
 DRY_RUN=false
 VERBOSE=false
@@ -55,27 +51,27 @@ print_box_bottom() {
 }
 
 log_info() {
-    echo -e "${CYAN}○${RESET} $1"
+    echo -e "${CYAN}>${RESET} $1"
 }
 
 log_success() {
-    echo -e "${GREEN}✓${RESET} $1"
+    echo -e "${GREEN}*${RESET} $1"
 }
 
 log_warn() {
-    echo -e "${YELLOW}⚠️ ${RESET} $1"
+    echo -e "${YELLOW}!${RESET} $1"
 }
 
 log_error() {
-    echo -e "${RED}✗${RESET} $1"
+    echo -e "${RED}x${RESET} $1"
 }
 
 log_step() {
-    echo -e "${MAGENTA}🔧${RESET} ${BOLD}$1${RESET}"
+    echo -e "${MAGENTA}>${RESET} ${BOLD}$1${RESET}"
 }
 
 log_verbose() {
-    [ "$VERBOSE" = true ] && echo -e "${DIM}  →${RESET} $1"
+    [ "$VERBOSE" = true ] && echo -e "${DIM}  -${RESET} $1"
 }
 
 ask() {
@@ -299,59 +295,44 @@ scan_system() {
 }
 
 print_status() {
-    local width=58
     local apps_installed=0
     local -a APP_LIST=(tmux ghostty fish nvim starship alacritty lazygit)
     local apps_total=${#APP_LIST[@]}
-    local line
     
     echo
-    line=$(printf "%${width}s" "")
-    echo -e "${CYAN}${BOX_TOP_LEFT}${line:0:$width}${BOX_TOP_RIGHT}${RESET}"
-    
-    echo -e "${CYAN}${BOX_VERTICAL}$(printf "%$((width))s" "")${BOX_VERTICAL}${RESET}"
-    echo -e "${CYAN}${BOX_VERTICAL}  📦 Estado del sistema:$(printf "%$((width - 22))s" "")${BOX_VERTICAL}${RESET}"
-    echo -e "${CYAN}${BOX_VERTICAL}$(printf "%$((width))s" "")${BOX_VERTICAL}${RESET}"
+    echo "+----------------------------------------------------+"
+    echo "|  Estado del sistema:                               |"
+    echo "+----------------------------------------------------+"
     
     for app in "${APP_LIST[@]}"; do
         local status="${APP_STATUS[$app]:-missing}"
-        local symbol="[✗]"
-        local color="$RED"
+        local symbol="[ ]"
         
         if [ "$status" = "installed" ]; then
-            symbol="[✓]"
-            color="$GREEN"
+            symbol="[x]"
             apps_installed=$((apps_installed + 1))
+            printf "|  %s %-15s                               |\n" "$symbol" "$app"
+        else
+            printf "|  [ ] %-15s                               |\n" "$app"
         fi
-        
-        local entry="  ${color}${symbol}${RESET} $app"
-        echo -e "${CYAN}${BOX_VERTICAL}$(printf "%-${width}s" "$entry")${BOX_VERTICAL}${RESET}"
     done
     
-    echo -e "${CYAN}${BOX_VERTICAL}$(printf "%$((width))s" "")${BOX_VERTICAL}${RESET}"
-    echo -e "${CYAN}${BOX_VERTICAL}  Resumen: $apps_installed/$apps_total apps instaladas$(printf "%$((width - 32))s" "")${BOX_VERTICAL}${RESET}"
-    
-    line=$(printf "%${width}s" "")
-    echo -e "${CYAN}${BOX_BOTTOM_LEFT}${line:0:$width}${BOX_BOTTOM_RIGHT}${RESET}"
+    echo "+----------------------------------------------------+"
+    printf "|  Resumen: %d/%d apps instaladas                  |\n" "$apps_installed" "$apps_total"
+    echo "+----------------------------------------------------+"
 }
 
 show_menu() {
-    local width=58
-    local line
-    
-    line=$(printf "%${width}s" "")
-    echo -e "${CYAN}${BOX_TOP_LEFT}${line:0:$width}${BOX_TOP_RIGHT}${RESET}"
-    
-    echo -e "${CYAN}${BOX_VERTICAL}$(printf "%$((width))s" "")${BOX_VERTICAL}${RESET}"
-    echo -e "${CYAN}${BOX_VERTICAL}$(printf "%-${width}s" "  [I] Instalar apps faltantes + symlinks")${BOX_VERTICAL}${RESET}"
-    echo -e "${CYAN}${BOX_VERTICAL}$(printf "%-${width}s" "  [A] Reinstalar todos los symlinks (con backup)")${BOX_VERTICAL}${RESET}"
-    echo -e "${CYAN}${BOX_VERTICAL}$(printf "%-${width}s" "  [C] Solo crear symlinks (apps ya instaladas)")${BOX_VERTICAL}${RESET}"
-    echo -e "${CYAN}${BOX_VERTICAL}$(printf "%-${width}s" "  [V] Verbose (activar)")${BOX_VERTICAL}${RESET}"
-    echo -e "${CYAN}${BOX_VERTICAL}$(printf "%-${width}s" "  [Q] Salir")${BOX_VERTICAL}${RESET}"
-    echo -e "${CYAN}${BOX_VERTICAL}$(printf "%$((width))s" "")${BOX_VERTICAL}${RESET}"
-    
-    line=$(printf "%${width}s" "")
-    echo -e "${CYAN}${BOX_BOTTOM_LEFT}${line:0:$width}${BOX_BOTTOM_RIGHT}${RESET}"
+    echo
+    echo "+----------------------------------------------------+"
+    echo "|  Opciones:                                        |"
+    echo "+----------------------------------------------------+"
+    echo "|  [I] Instalar apps faltantes + symlinks            |"
+    echo "|  [A] Reinstalar todos los symlinks (con backup)    |"
+    echo "|  [C] Solo crear symlinks (apps ya instaladas)     |"
+    echo "|  [V] Verbose (activar)                          |"
+    echo "|  [Q] Salir                                      |"
+    echo "+----------------------------------------------------+"
 }
 
 parse_args() {
@@ -379,15 +360,10 @@ parse_args() {
 main() {
     parse_args "$@"
     
-    local title="  GRINGO.DEV DOTFILES INSTALLER v${VERSION}"
-    local width=58
-    
     echo
-    echo -e "${CYAN}$(printf '=%.0s' $(seq 1 60) | tr '\n' '=')${RESET}"
-    echo -e "${BOLD}${MAGENTA}${BOX_TOP_LEFT}==========================================================${BOX_TOP_RIGHT}${RESET}"
-    echo -e "${BOLD}${MAGENTA}${BOX_VERTICAL}$(printf "%-58s" "$title")${BOX_VERTICAL}${RESET}"
-    echo -e "${BOLD}${MAGENTA}${BOX_BOTTOM_LEFT}==========================================================${BOX_BOTTOM_RIGHT}${RESET}"
-    echo -e "${CYAN}$(printf '=%.0s' $(seq 1 60) | tr '\n' '=')${RESET}"
+    echo "============================================================"
+    echo "  GRINGO.DEV DOTFILES INSTALLER v${VERSION}"
+    echo "============================================================"
     
     if [ "$(uname -s)" != "Linux" ]; then
         log_error "Este script solo funciona en Linux"
