@@ -325,13 +325,13 @@ print_status() {
 show_menu() {
     echo
     echo "+----------------------------------------------------+"
-    echo "|  Opciones:                                        |"
+    echo "|  Opciones:                                         |"
     echo "+----------------------------------------------------+"
     echo "|  [I] Instalar apps faltantes + symlinks            |"
     echo "|  [A] Reinstalar todos los symlinks (con backup)    |"
-    echo "|  [C] Solo crear symlinks (apps ya instaladas)     |"
-    echo "|  [V] Verbose (activar)                          |"
-    echo "|  [Q] Salir                                      |"
+    echo "|  [C] Solo crear symlinks (apps ya instaladas)      |"
+    echo "|  [V] Verbose (activar)                             |"
+    echo "|  [Q] Salir                                         |"
     echo "+----------------------------------------------------+"
 }
 
