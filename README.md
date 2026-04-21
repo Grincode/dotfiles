@@ -8,6 +8,40 @@
 
 Configuración personal para un workflowDev optimal.
 
+---
+
+## 🚧 Instalador v2.0 (En Desarrollo)
+
+> **Rama**: `feat/improved-install-script`  
+> **Estado**: En desarrollo activo - Feedback bienvenido!
+
+Nueva versión del instalador con:
+
+- Instalación interactiva de aplicaciones via Homebrew
+- Backup automático antes de sobrescribir configs
+- Interfaz visual en terminal
+- Múltiples modos: instalar apps, reinstalar symlinks, solo symlinks
+
+### Probar la nueva versión
+
+```bash
+cd ~/dotfiles
+git checkout feat/improved-install-script
+./install.sh
+```
+
+### Cambios planned para v2.0
+
+- [ ] Instalación de brew si no está presente
+- [ ] Detección automática de apps instaladas
+- [ ] Preguntar antes de cada symlink
+- [ ] Modo verbose para debugging
+- [ ] Verificación post-instalación
+
+---
+
+## Instalación (v1.0)
+
 ## Estructura
 
 | Directorio   | Descripción            |
@@ -42,3 +76,7 @@ El script symlinkea cada directorio a `~/.config/`.
 1. **Tmux**: Instalar TPM plugins (prefix + I)
 2. **Fisher**: Plugins de fish se instalan automáticamente en primera sesión
 3. **LazyVim**: Plugins se instalan automáticamente al abrir nvim
+
+---
+
+*Para la versión v2.0 (en desarrollo), el instalador maneja todo automáticamente.*
