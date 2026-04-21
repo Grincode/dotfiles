@@ -1,44 +1,558 @@
 #!/bin/bash
 set -e
 
-echo "🚀 Instalando dotfiles..."
+VERSION="2.0.0"
 
-DOTFILES_DIR="$HOME/dotfiles"
+RESET="\033[0m"
+BOLD="\033[1m"
+DIM="\033[2m"
 
-# Crear carpetas necesarias
-mkdir -p "$HOME/.config"
-mkdir -p "$HOME/.config/tmux"
-mkdir -p "$HOME/.config/ghostty"
-mkdir -p "$HOME/.config/fish"
-mkdir -p "$HOME/.config/alacritty"
-mkdir -p "$HOME/.config/lazygit"
+RED="\033[31m"
+GREEN="\033[32m"
+YELLOW="\033[33m"
+BLUE="\033[34m"
+MAGENTA="\033[35m"
+CYAN="\033[36m"
 
-# tmux
-ln -sf "$DOTFILES_DIR/tmux/tmux.conf" "$HOME/.config/tmux/tmux.conf"
-ln -sf "$HOME/.config/tmux/tmux.conf" "$HOME/.tmux.conf"
+BOX_TOP_LEFT="╔"
+BOX_TOP_RIGHT="╗"
+BOX_BOTTOM_LEFT="╚"
+BOX_BOTTOM_RIGHT="╝"
+BOX_HORIZONTAL="═"
+BOX_VERTICAL="║"
+BOX_T_DOWN="╦"
+BOX_T_UP="╩"
+BOX_T_RIGHT="╠"
+BOX_T_LEFT="╣"
 
-# ghostty
-ln -sf "$DOTFILES_DIR/ghostty/config" "$HOME/.config/ghostty/config"
+DRY_RUN=false
+VERBOSE=false
+INTERACTIVE=true
 
-# fish
-ln -sf "$DOTFILES_DIR/fish/config.fish" "$HOME/.config/fish/config.fish"
+print_box() {
+    local title="$1"
+    local width=60
+    local title_len=${#title}
+    local pad=$(( (width - title_len - 2) / 2 ))
+    
+    echo -en "${CYAN}${BOX_TOP_LEFT}${BOX_HORIZONTAL}$(printf '%0.s' $BOX_HORIZONTAL | head -c $pad)${RESET}"
+    echo -en "${BOLD}${title}${RESET}"
+    echo -en "${CYAN}$(printf '%0.s' $BOX_HORIZONTAL | head -c $((width - pad - title_len - 2)))${BOX_TOP_RIGHT}${RESET}"
+    echo
+}
 
-# nvim (carpeta completa)
-rm -rf "$HOME/.config/nvim"
-ln -sf "$DOTFILES_DIR/nvim" "$HOME/.config/nvim"
+print_line() {
+    echo -en "${CYAN}${BOX_VERTICAL}${RESET}"
+    printf "%-$((60))s" "$1"
+    echo -en "${CYAN}${BOX_VERTICAL}${RESET}"
+    echo
+}
 
-# starship
-ln -sf "$DOTFILES_DIR/starship/starship.toml" "$HOME/.config/starship.toml"
+print_box_bottom() {
+    echo -en "${CYAN}${BOX_BOTTOM_LEFT}${BOX_HORIZONTAL}$(printf '%0.s' $BOX_HORIZONTAL | head -c 58)${BOX_BOTTOM_RIGHT}${RESET}"
+    echo
+}
 
-# alacritty
-ln -sf "$DOTFILES_DIR/alacritty/alacritty.toml" "$HOME/.config/alacritty/alacritty.toml"
+log_info() {
+    echo -e "${CYAN}○${RESET} $1"
+}
 
-# lazygit (archivo correcto)
-ln -sf "$DOTFILES_DIR/lazygit/config.yml" "$HOME/.config/lazygit/config.yml"
+log_success() {
+    echo -e "${GREEN}✓${RESET} $1"
+}
 
-# git (solo si existe)
-if [ -f "$DOTFILES_DIR/git/.gitconfig" ]; then
-  ln -sf "$DOTFILES_DIR/git/.gitconfig" "$HOME/.gitconfig"
-fi
+log_warn() {
+    echo -e "${YELLOW}⚠️ ${RESET} $1"
+}
 
-echo "✅ Dotfiles instalados correctamente"
+log_error() {
+    echo -e "${RED}✗${RESET} $1"
+}
+
+log_step() {
+    echo -e "${MAGENTA}🔧${RESET} ${BOLD}$1${RESET}"
+}
+
+log_verbose() {
+    [ "$VERBOSE" = true ] && echo -e "${DIM}  →${RESET} $1"
+}
+
+ask() {
+    local prompt="$1"
+    local default="${2:-n}"
+    local response
+    
+    while true; do
+        echo -en "${CYAN}?${RESET} ${prompt} [${default^^}] "
+        read -r response
+        
+        if [ -z "$response" ]; then
+            response="$default"
+        fi
+        
+        case "$response" in
+            s|S|y|Y) return 0 ;;
+            n|N) return 1 ;;
+        esac
+    done
+}
+
+check_command() {
+    command -v "$1" >/dev/null 2>&1
+}
+
+get_version() {
+    local cmd="$1"
+    local version_flag="${2:---version}"
+    
+    case "$cmd" in
+        tmux) tmux -V 2>/dev/null | awk '{print $2}' ;;
+        ghostty) ghostty +version 2>/dev/null | awk '{print $2}' ;;
+        fish) fish --version 2>/dev/null | awk '{print $3}' ;;
+        nvim) nvim --version 2>/dev/null | head -1 | awk '{print $2}' ;;
+        starship) starship --version 2>/dev/null | head -1 | awk '{print $2}' ;;
+        alacritty) alacritty --version 2>/dev/null | head -1 | awk '{print $2}' ;;
+        lazygit) lazygit --version 2>/dev/null | awk '{print $3}' ;;
+        *) ;;
+    esac
+}
+
+check_brew() {
+    if check_command brew; then
+        return 0
+    fi
+    return 1
+}
+
+install_brew() {
+    log_warn "Brew no encontrado en PATH"
+    
+    if ask "¿Instalar Homebrew?"; then
+        log_step "Instalando Homebrew..."
+        
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" 2>/dev/null
+        
+        if check_command brew; then
+            log_success "Homebrew instalado"
+            
+            local shell_rc=""
+            if [ -f "$HOME/.bashrc" ]; then
+                shell_rc="$HOME/.bashrc"
+            elif [ -f "$HOME/.profile" ]; then
+                shell_rc="$HOME/.profile"
+            fi
+            
+            if [ -n "$shell_rc" ]; then
+                if ! grep -q "homebrew" "$shell_rc" 2>/dev/null; then
+                    echo '' >> "$shell_rc"
+                    echo '# Homebrew' >> "$shell_rc"
+                    echo 'export PATH="/usr/local/bin:$PATH"' >> "$shell_rc"
+                fi
+            fi
+            
+            export PATH="/usr/local/bin:$PATH"
+            return 0
+        else
+            log_error "Error al instalar Homebrew"
+            return 1
+        fi
+    fi
+    return 1
+}
+
+check_app() {
+    local app="$1"
+    check_command "$app"
+}
+
+install_app() {
+    local app="$1"
+    local install_cmd="$2"
+    
+    log_step "Instalando $app..."
+    
+    if eval "$install_cmd"; then
+        log_success "$app instalado"
+        return 0
+    else
+        log_error "Error al instalar $app"
+        return 1
+    fi
+}
+
+
+
+create_link() {
+    local src="$1"
+    local dst="$2"
+    
+    if [ ! -e "$src" ]; then
+        log_error "Origen no existe: $src"
+        return 1
+    fi
+    
+    local is_dir=false
+    if [ -d "$dst" ] && [ ! -L "$dst" ]; then
+        is_dir=true
+    fi
+    
+    if [ -e "$dst" ] && [ ! -L "$dst" ]; then
+        if [ "$is_dir" = true ]; then
+            local count=$(ls -1 "$dst" 2>/dev/null | wc -l)
+            if [ "$INTERACTIVE" = true ]; then
+                log_warn "$dst es un directorio con $count archivos"
+                if ! ask "¿Eliminar y reemplazar por symlink?"; then
+                    log_warn "Omitido: $dst"
+                    return 2
+                fi
+            fi
+        else
+            if [ "$INTERACTIVE" = true ]; then
+                if ! ask "¿Respaldar $dst?"; then
+                    log_warn "Omitido: $dst"
+                    return 2
+                fi
+            fi
+        fi
+        local backup="${dst}.backup.$(date +%Y%m%d%H%M%S)"
+        rm -rf "$dst"
+        mv "$(dirname "$dst")/$(basename "$dst")" "$backup" 2>/dev/null || mv "$dst" "$backup"
+        log_success "Respaldado → $backup"
+    fi
+    
+    if [ -d "$src" ]; then
+        rm -rf "$dst"
+    fi
+    
+    ln -sf "$src" "$dst"
+    log_success "Linkeado: $dst"
+    log_verbose "  → $(readlink -f "$dst")"
+    return 0
+}
+
+verify_links() {
+    local failed=0
+    
+    echo
+    log_step "Verificando symlinks..."
+    
+    for link in "${!LINK_MAP[@]}"; do
+        if [ -L "$link" ] && [ -e "$link" ]; then
+            log_verbose "✓ $link"
+        else
+            log_error "✗ $link"
+            failed=$((failed + 1))
+        fi
+    done
+    
+    if [ $failed -eq 0 ]; then
+        log_success "Todos los symlinks verificados"
+        return 0
+    else
+        log_error "$failed symlinks fallidos"
+        return 1
+    fi
+}
+
+declare -A APPS=(
+    ["tmux"]="brew install tmux"
+    ["ghostty"]="brew tap homebrew/core && brew install ghostty"
+    ["fish"]="brew install fish"
+    ["nvim"]="brew install neovim"
+    ["starship"]="brew install starship"
+    ["alacritty"]="brew install alacritty"
+    ["lazygit"]="brew install lazygit"
+)
+
+declare -A LINK_MAP
+declare -A APP_STATUS
+
+scan_system() {
+    log_step "Escaneando sistema..."
+    
+    for app in "${!APPS[@]}"; do
+        if check_app "$app"; then
+            local ver
+            ver=$(get_version "$app")
+            APP_STATUS[$app]="installed:${ver}"
+            log_verbose "$app: $ver"
+        else
+            APP_STATUS[$app]="missing"
+            log_verbose "$app: no instalado"
+        fi
+    done
+    
+    if check_brew; then
+        APP_STATUS["brew"]="installed"
+    else
+        APP_STATUS["brew"]="missing"
+    fi
+}
+
+print_status() {
+    local width=60
+    local apps_installed=0
+    local apps_total=${#APPS[@]}
+    
+    echo
+    echo -en "${CYAN}${BOX_TOP_LEFT}${BOX_HORIZONTAL}$(printf '%0.s' $BOX_HORIZONTAL | head -c $((width - 2)))${BOX_TOP_RIGHT}${RESET}"
+    echo
+    echo -en "${CYAN}${BOX_VERTICAL}${RESET}"
+    printf "%-$((width))s" "  📦 Estado del sistema:"
+    echo -en "${CYAN}${BOX_VERTICAL}${RESET}"
+    echo
+    
+    for app in "${!APPS[@]}"; do
+        local status="${APP_STATUS[$app]:-missing}"
+        local symbol="[✗]"
+        local color="$RED"
+        
+        case "$status" in
+            installed:*) 
+                symbol="[✓]"
+                color="$GREEN"
+                apps_installed=$((apps_installed + 1))
+                ;;
+        esac
+        
+        echo -en "${CYAN}${BOX_VERTICAL}${RESET}  ${color}${symbol}${RESET} $app"
+        printf "%-$((width - 10))s" ""
+        echo -en "${CYAN}${BOX_VERTICAL}${RESET}"
+        echo
+    done
+    
+    echo -en "${CYAN}${BOX_VERTICAL}${RESET}"
+    printf "%-$((width))s" "  Resumen: $apps_installed/$apps_total apps instaladas"
+    echo -en "${CYAN}${BOX_VERTICAL}${RESET}"
+    echo
+    echo -en "${CYAN}${BOX_BOTTOM_LEFT}${BOX_HORIZONTAL}$(printf '%0.s' $BOX_HORIZONTAL | head -c $((width - 2)))${BOX_BOTTOM_RIGHT}${RESET}"
+    echo
+}
+
+show_menu() {
+    echo
+    echo -en "${CYAN}${BOX_TOP_LEFT}${BOX_HORIZONTAL}$(printf '%0.s' $BOX_HORIZONTAL | head -c 58)${BOX_TOP_RIGHT}${RESET}"
+    echo
+    echo -en "${CYAN}${BOX_VERTICAL} ${RESET}"
+    printf "%-58s" "  [I] Instalar apps faltantes + symlinks"
+    echo -en "${CYAN}${BOX_VERTICAL}${RESET}"
+    echo
+    echo -en "${CYAN}${BOX_VERTICAL} ${RESET}"
+    printf "%-58s" "  [A] Reinstalar todos los symlinks (con backup)"
+    echo -en "${CYAN}${BOX_VERTICAL}${RESET}"
+    echo
+    echo -en "${CYAN}${BOX_VERTICAL} ${RESET}"
+    printf "%-58s" "  [C] Solo crear symlinks (apps ya instaladas)"
+    echo -en "${CYAN}${BOX_VERTICAL}${RESET}"
+    echo
+    echo -en "${CYAN}${BOX_VERTICAL} ${RESET}"
+    printf "%-58s" "  [V] Verbose (activar)"
+    echo -en "${CYAN}${BOX_VERTICAL}${RESET}"
+    echo
+    echo -en "${CYAN}${BOX_VERTICAL} ${RESET}"
+    printf "%-58s" "  [Q] Salir"
+    echo -en "${CYAN}${BOX_VERTICAL}${RESET}"
+    echo
+    echo -en "${CYAN}${BOX_BOTTOM_LEFT}${BOX_HORIZONTAL}$(printf '%0.s' $BOX_HORIZONTAL | head -c 58)${BOX_BOTTOM_RIGHT}${RESET}"
+    echo
+}
+
+parse_args() {
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --verbose|-v)
+                VERBOSE=true
+                ;;
+            --non-interactive|-y)
+                INTERACTIVE=false
+                ;;
+            --help|-h)
+                echo "Uso: $0 [--verbose] [--non-interactive]"
+                echo "  --verbose, -v    Salida detallada"
+                echo "  --non-interactive, -y  No preguntar (usar defaults)"
+                exit 0
+                ;;
+            *)
+                ;;
+        esac
+        shift
+    done
+}
+
+main() {
+    parse_args "$@"
+    
+    echo
+    echo -e "${CYAN}$(printf '=%.0s' $(seq 1 60) | tr '\n' '=')${RESET}"
+    echo -e "${BOLD}${MAGENTA}  ╔═══════════════════════════════════════════════════════════════╗${RESET}"
+    echo -e "${BOLD}${MAGENTA}  ║           GRINGO.DEV DOTFILES INSTALLER v${VERSION}              ║${RESET}"
+    echo -e "${BOLD}${MAGENTA}  ╚═══════════════════════════════════════════════════════════════╝${RESET}"
+    echo -e "${CYAN}$(printf '=%.0s' $(seq 1 60) | tr '\n' '=')${RESET}"
+    
+    if [ "$(uname -s)" != "Linux" ]; then
+        log_error "Este script solo funciona en Linux"
+        exit 1
+    fi
+    
+    DOTFILES_DIR="$HOME/dotfiles"
+    if [ ! -d "$DOTFILES_DIR" ]; then
+        log_error "No se encontró $DOTFILES_DIR"
+        exit 1
+    fi
+    
+    log_success "Directorio dotfiles: $DOTFILES_DIR"
+    
+    if ! check_brew; then
+        if ! install_brew; then
+            log_warn "Brew no disponible, se omitirá instalación de apps"
+        fi
+    else
+        APP_STATUS["brew"]="installed"
+    fi
+    
+    scan_system
+    print_status
+    
+    if [ "$INTERACTIVE" = false ]; then
+        install_missing_apps
+        create_all_links
+        exit 0
+    fi
+    
+    while true; do
+        show_menu
+        echo
+        echo -en "${CYAN}?${RESET} Opción: "
+        read -r option
+        
+        case "$option" in
+            i|I)
+                install_missing_apps
+                create_all_links
+                ;;
+            a|A)
+                force_all_links
+                ;;
+            c|C)
+                create_all_links
+                ;;
+            v|V)
+                VERBOSE=true
+                echo "Verbose activado"
+                ;;
+            q|Q)
+                echo
+                log_info "Saliendo..."
+                exit 0
+                ;;
+            *)
+                log_error "Opción inválida"
+                ;;
+        esac
+        
+        if [ "$?" -eq 0 ]; then
+            break
+        fi
+    done
+}
+
+install_missing_apps() {
+    log_step "Instalando apps faltantes..."
+    
+    for app in "${!APPS[@]}"; do
+        local status="${APP_STATUS[$app]:-missing}"
+        
+        if [ "$status" = "missing" ]; then
+            echo
+            log_info "$app no instalado"
+            
+            if [ "$INTERACTIVE" = true ]; then
+                if ! ask "¿Instalar $app?"; then
+                    log_verbose "Omitido: $app"
+                    continue
+                fi
+            fi
+            
+            install_app "$app" "${APPS[$app]}"
+            
+            if check_app "$app"; then
+                local ver
+                ver=$(get_version "$app")
+                APP_STATUS[$app]="installed:${ver}"
+            fi
+        else
+            log_verbose "$app ya instalado"
+        fi
+    done
+    
+    log_success "Instalación de apps completada"
+}
+
+create_all_links() {
+    log_step "Creando symlinks..."
+    
+    mkdir -p "$HOME/.config"
+    mkdir -p "$HOME/.config/tmux"
+    mkdir -p "$HOME/.config/ghostty"
+    mkdir -p "$HOME/.config/fish"
+    mkdir -p "$HOME/.config/alacritty"
+    mkdir -p "$HOME/.config/lazygit"
+    
+    declare -A LINK_MAP
+    LINK_MAP["$HOME/.config/tmux/tmux.conf"]="$DOTFILES_DIR/tmux/tmux.conf"
+    LINK_MAP["$HOME/.tmux.conf"]="$DOTFILES_DIR/tmux/tmux.conf"
+    LINK_MAP["$HOME/.config/ghostty/config"]="$DOTFILES_DIR/ghostty/config"
+    LINK_MAP["$HOME/.config/fish/config.fish"]="$DOTFILES_DIR/fish/config.fish"
+    LINK_MAP["$HOME/.config/starship.toml"]="$DOTFILES_DIR/starship/starship.toml"
+    LINK_MAP["$HOME/.config/alacritty/alacritty.toml"]="$DOTFILES_DIR/alacritty/alacritty.toml"
+    LINK_MAP["$HOME/.config/lazygit/config.yml"]="$DOTFILES_DIR/lazygit/config.yml"
+    LINK_MAP["$HOME/.config/nvim"]="$DOTFILES_DIR/nvim"
+    
+    if [ -f "$DOTFILES_DIR/git/.gitconfig" ]; then
+        LINK_MAP["$HOME/.gitconfig"]="$DOTFILES_DIR/git/.gitconfig"
+    fi
+    
+    local success=0
+    local failed=0
+    local skipped=0
+    
+    for dst in "${!LINK_MAP[@]}"; do
+        local src="${LINK_MAP[$dst]}"
+        
+        if [ ! -f "$src" ] && [ ! -d "$src" ]; then
+            log_warn "Origen no existe: $src"
+            skipped=$((skipped + 1))
+            continue
+        fi
+        
+        if [ "$INTERACTIVE" = true ]; then
+            if ! ask "¿Linkear $dst?"; then
+                log_verbose "Omitido: $dst"
+                skipped=$((skipped + 1))
+                continue
+            fi
+        fi
+        
+        if create_link "$src" "$dst"; then
+            success=$((success + 1))
+        else
+            failed=$((failed + 1))
+        fi
+    done
+    
+    echo
+    log_success "Symlinks creados: $success"
+    [ $skipped -gt 0 ] && log_info "Omitidos: $skipped"
+    [ $failed -gt 0 ] && log_error "Fallidos: $failed"
+    
+    verify_links
+}
+
+force_all_links() {
+    log_step "Forzando todos los symlinks (con backup)..."
+    INTERACTIVE=true
+    
+    create_all_links
+}
+
+main "$@"
